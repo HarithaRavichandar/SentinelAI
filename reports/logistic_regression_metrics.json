@@ -1,0 +1,233 @@
+{
+  "train_time_seconds": 44.55450463294983,
+  "warnings": [],
+  "accuracy": 0.8457737359905935,
+  "classification_report": {
+    "0": {
+      "precision": 0.9997682502896872,
+      "recall": 0.9657308086932189,
+      "f1-score": 0.9824548085590928,
+      "support": 53605.0
+    },
+    "1": {
+      "precision": 0.1048951048951049,
+      "recall": 1.0,
+      "f1-score": 0.18987341772151897,
+      "support": 60.0
+    },
+    "2": {
+      "precision": 0.06265060240963856,
+      "recall": 0.45614035087719296,
+      "f1-score": 0.11016949152542373,
+      "support": 57.0
+    },
+    "3": {
+      "precision": 0.12954545454545455,
+      "recall": 0.08878504672897196,
+      "f1-score": 0.10536044362292053,
+      "support": 642.0
+    },
+    "4": {
+      "precision": 0.8503021850302185,
+      "recall": 0.3878286683630195,
+      "f1-score": 0.5326925877384593,
+      "support": 4716.0
+    },
+    "5": {
+      "precision": 0.5256581883087907,
+      "recall": 0.27659074900211317,
+      "f1-score": 0.36246153846153845,
+      "support": 4259.0
+    },
+    "6": {
+      "precision": 0.23422860712054966,
+      "recall": 0.5647590361445783,
+      "f1-score": 0.33112582781456956,
+      "support": 664.0
+    },
+    "7": {
+      "precision": 0.33653117899520324,
+      "recall": 0.4716914366595895,
+      "f1-score": 0.3928097834094593,
+      "support": 2826.0
+    },
+    "8": {
+      "precision": 0.06504374286801065,
+      "recall": 0.5428571428571428,
+      "f1-score": 0.11616847826086958,
+      "support": 315.0
+    },
+    "9": {
+      "precision": 0.020042949176807445,
+      "recall": 0.6511627906976745,
+      "f1-score": 0.03888888888888889,
+      "support": 43.0
+    },
+    "accuracy": 0.8457737359905935,
+    "macro avg": {
+      "precision": 0.3328666263639466,
+      "recall": 0.5405546030023503,
+      "f1-score": 0.3162005266002741,
+      "support": 67187.0
+    },
+    "weighted avg": {
+      "precision": 0.9088414260292034,
+      "recall": 0.8457737359905935,
+      "f1-score": 0.865850815042151,
+      "support": 67187.0
+    }
+  },
+  "confusion_matrix": [
+    [
+      51768,
+      45,
+      27,
+      54,
+      132,
+      528,
+      305,
+      386,
+      178,
+      182
+    ],
+    [
+      0,
+      60,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      26,
+      0,
+      1,
+      3,
+      2,
+      13,
+      6,
+      6
+    ],
+    [
+      3,
+      114,
+      26,
+      57,
+      101,
+      47,
+      47,
+      113,
+      68,
+      66
+    ],
+    [
+      7,
+      309,
+      162,
+      233,
+      1829,
+      288,
+      370,
+      761,
+      241,
+      516
+    ],
+    [
+      0,
+      13,
+      150,
+      69,
+      54,
+      1178,
+      498,
+      1183,
+      698,
+      416
+    ],
+    [
+      2,
+      29,
+      21,
+      26,
+      34,
+      50,
+      375,
+      63,
+      29,
+      35
+    ],
+    [
+      0,
+      2,
+      3,
+      0,
+      0,
+      131,
+      0,
+      1333,
+      1236,
+      121
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      15,
+      2,
+      100,
+      171,
+      27
+    ],
+    [
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      2,
+      9,
+      2,
+      28
+    ]
+  ],
+  "model_params": {
+    "C": 1.0,
+    "class_weight": "balanced",
+    "dual": false,
+    "fit_intercept": true,
+    "intercept_scaling": 1,
+    "l1_ratio": null,
+    "max_iter": 200,
+    "multi_class": "multinomial",
+    "n_jobs": -1,
+    "penalty": "l2",
+    "random_state": null,
+    "solver": "lbfgs",
+    "tol": 0.0001,
+    "verbose": 0,
+    "warm_start": false
+  },
+  "feature_count": 67,
+  "training_samples": 307501,
+  "conflict_policy": "exclude_conflicts_in=train",
+  "constant_features_dropped": [
+    "Bwd PSH Flags",
+    "Fwd URG Flags",
+    "Bwd URG Flags",
+    "URG Flag Count",
+    "CWR Flag Count",
+    "ECE Flag Count",
+    "Fwd Bytes/Bulk Avg",
+    "Fwd Packet/Bulk Avg",
+    "Fwd Bulk Rate Avg"
+  ]
+}

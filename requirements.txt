@@ -1,0 +1,10 @@
+# SentinelAI - Initial Data Inspection Phase Dependencies
+# Note: Machine learning (scikit-learn, PyTorch, etc.) and web application
+# dependencies will be added incrementally in subsequent phases.
+
+pandas>=2.0.0
+numpy>=1.24.0
+fastapi
+uvicorn
+httpx
+python-dotenv>=1.0.0
