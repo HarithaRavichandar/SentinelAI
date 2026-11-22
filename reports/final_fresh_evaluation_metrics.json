@@ -1,0 +1,333 @@
+{
+  "evaluation_timestamp": "2026-11-19T15:02:26Z",
+  "gate_info": {
+    "discrepancy_note": "Validation constraint discrepancy documented: selected pair [0.20, 0.70) has reported validation Benign FPR of 1.292%, which exceeds the nominal 1.0% ceiling. Per protocol, parameters are strictly frozen without post-hoc tuning on test data.",
+    "selected_thresholds": {
+      "theta_low": 0.2,
+      "theta_high": 0.7
+    }
+  },
+  "multiclass_metrics": {
+    "accuracy": 0.9362358014942599,
+    "balanced_accuracy": 0.5440899258257675,
+    "macro_f1": 0.5954758608875894,
+    "weighted_f1": 0.9353378547930032,
+    "confusion_matrix": [
+      [
+        52829,
+        13,
+        0,
+        6,
+        151,
+        543,
+        3,
+        66,
+        7,
+        0
+      ],
+      [
+        16,
+        14,
+        0,
+        2,
+        23,
+        1,
+        1,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        27,
+        0,
+        15,
+        15,
+        0,
+        4,
+        0,
+        0
+      ],
+      [
+        7,
+        4,
+        0,
+        211,
+        296,
+        112,
+        6,
+        26,
+        4,
+        1
+      ],
+      [
+        90,
+        9,
+        1,
+        45,
+        3692,
+        520,
+        25,
+        211,
+        9,
+        4
+      ],
+      [
+        193,
+        1,
+        0,
+        19,
+        316,
+        3242,
+        29,
+        136,
+        29,
+        1
+      ],
+      [
+        13,
+        0,
+        1,
+        9,
+        72,
+        90,
+        483,
+        13,
+        2,
+        0
+      ],
+      [
+        69,
+        1,
+        0,
+        3,
+        320,
+        406,
+        3,
+        1088,
+        4,
+        0
+      ],
+      [
+        12,
+        0,
+        0,
+        11,
+        52,
+        119,
+        2,
+        14,
+        55,
+        0
+      ],
+      [
+        1,
+        0,
+        0,
+        1,
+        8,
+        10,
+        0,
+        3,
+        0,
+        12
+      ]
+    ],
+    "per_class": {
+      "0": {
+        "name": "Benign",
+        "support": 53618,
+        "precision": 0.9924666541424009,
+        "recall": 0.9852847924204559,
+        "f1": 0.9888626834381551
+      },
+      "1": {
+        "name": "Analysis",
+        "support": 57,
+        "precision": 0.3333333333333333,
+        "recall": 0.24561403508771928,
+        "f1": 0.2828282828282828
+      },
+      "2": {
+        "name": "Backdoor",
+        "support": 61,
+        "precision": 0.9310344827586207,
+        "recall": 0.4426229508196721,
+        "f1": 0.6
+      },
+      "3": {
+        "name": "DoS",
+        "support": 667,
+        "precision": 0.6872964169381107,
+        "recall": 0.31634182908545727,
+        "f1": 0.433264887063655
+      },
+      "4": {
+        "name": "Exploits",
+        "support": 4606,
+        "precision": 0.7466127401415571,
+        "recall": 0.8015631784628745,
+        "f1": 0.7731127630614594
+      },
+      "5": {
+        "name": "Fuzzers",
+        "support": 3966,
+        "precision": 0.6409648082245947,
+        "recall": 0.8174483106404438,
+        "f1": 0.7185283687943262
+      },
+      "6": {
+        "name": "Generic",
+        "support": 683,
+        "precision": 0.875,
+        "recall": 0.7071742313323572,
+        "f1": 0.7821862348178138
+      },
+      "7": {
+        "name": "Reconnaissance",
+        "support": 1894,
+        "precision": 0.6969891095451634,
+        "recall": 0.5744456177402323,
+        "f1": 0.6298118668596238
+      },
+      "8": {
+        "name": "Shellcode",
+        "support": 265,
+        "precision": 0.5,
+        "recall": 0.20754716981132076,
+        "f1": 0.2933333333333334
+      },
+      "9": {
+        "name": "Worms",
+        "support": 35,
+        "precision": 0.6666666666666666,
+        "recall": 0.34285714285714286,
+        "f1": 0.4528301886792453
+      }
+    }
+  },
+  "binary_argmax_baseline": {
+    "total_flows": 65852,
+    "total_attacks": 12234,
+    "total_benign": 53618,
+    "tp": 11833,
+    "fn": 401,
+    "fp": 789,
+    "tn": 52829,
+    "attack_recall": 0.967222494686938,
+    "attack_precision": 0.9374900966566313,
+    "attack_f1": 0.9521242355970391,
+    "benign_fpr": 0.014715207579544183,
+    "benign_fnr": 0.03277750531306196
+  },
+  "deterministic_baseline_policy": {
+    "policy_name": "Validation-Calibrated Deterministic Policy",
+    "auto_benign_count": 52961,
+    "auto_benign_rate_pct": 80.42,
+    "review_queue_count": 2408,
+    "review_queue_rate_pct": 3.66,
+    "attack_candidate_count": 10483,
+    "attack_candidate_rate_pct": 15.92,
+    "total_true_attacks": 12234,
+    "attacks_caught_count": 12014,
+    "attack_recall_pct": 98.202,
+    "missed_attacks_count": 220,
+    "missed_attack_rate_pct": 1.798,
+    "benign_escalated_count": 558,
+    "benign_fpr_pct": 1.041,
+    "attacks_in_review": 2089,
+    "review_attack_concentration_pct": 86.75,
+    "missed_by_class": {
+      "Analysis": 7,
+      "Backdoor": 0,
+      "DoS": 3,
+      "Exploits": 48,
+      "Fuzzers": 113,
+      "Generic": 10,
+      "Reconnaissance": 32,
+      "Shellcode": 6,
+      "Worms": 1
+    }
+  },
+  "two_stage_policy": {
+    "policy_name": "Validation-Calibrated Two-Stage Triage Policy",
+    "theta_low": 0.2,
+    "theta_high": 0.7,
+    "auto_benign_count": 52485,
+    "auto_benign_rate_pct": 79.7,
+    "review_queue_count": 3059,
+    "review_queue_rate_pct": 4.65,
+    "attack_candidate_count": 10308,
+    "attack_candidate_rate_pct": 15.65,
+    "total_true_attacks": 12234,
+    "attacks_caught_count": 12206,
+    "attack_recall_pct": 99.771,
+    "missed_attacks_count": 28,
+    "missed_attack_rate_pct": 0.229,
+    "benign_escalated_count": 510,
+    "benign_fpr_pct": 0.951,
+    "attacks_in_review": 2408,
+    "review_attack_concentration_pct": 78.72,
+    "missed_by_class": {
+      "Analysis": 0,
+      "Backdoor": 0,
+      "DoS": 2,
+      "Exploits": 5,
+      "Fuzzers": 15,
+      "Generic": 0,
+      "Reconnaissance": 5,
+      "Shellcode": 1,
+      "Worms": 0
+    }
+  },
+  "disagreements": {
+    "concordant_flows": 65201,
+    "concordant_pct": 99.01,
+    "disagreement_count": 651,
+    "disagreement_pct": 0.99,
+    "det_benign_two_stage_review": 476,
+    "det_missed_attacks_saved": 192,
+    "det_review_two_stage_benign": 0
+  },
+  "secondary_conflicts_analysis": {
+    "total_conflicting_rows": 8909,
+    "raw_label_distribution": {
+      "Benign": 712,
+      "Analysis": 0,
+      "Backdoor": 0,
+      "DoS": 139,
+      "Exploits": 89,
+      "Fuzzers": 3264,
+      "Generic": 173,
+      "Reconnaissance": 4200,
+      "Shellcode": 326,
+      "Worms": 6
+    },
+    "predicted_label_distribution": {
+      "Benign": 238,
+      "Analysis": 0,
+      "Backdoor": 0,
+      "DoS": 202,
+      "Exploits": 679,
+      "Fuzzers": 1843,
+      "Generic": 1102,
+      "Reconnaissance": 4241,
+      "Shellcode": 593,
+      "Worms": 11
+    },
+    "mean_p_attack": 0.9410085306992928,
+    "std_p_attack": 0.13671209458854458,
+    "auto_benign_count": 72,
+    "auto_benign_rate_pct": 0.81,
+    "review_queue_count": 428,
+    "review_queue_rate_pct": 4.8,
+    "attack_candidate_count": 8409,
+    "attack_candidate_rate_pct": 94.39
+  },
+  "timing": {
+    "timestamp": "2026-11-19T15:02:26Z",
+    "infer_duration_seconds": 1.42,
+    "total_step4_seconds": 23.01
+  }
+}

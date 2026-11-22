@@ -4,6 +4,7 @@ import pathlib
 from fastapi.testclient import TestClient
 
 from sentinelai.api import app
+from sentinelai.triage.placeholder import generate_placeholder_explanation
 
 client = TestClient(app)
 
@@ -15,7 +16,11 @@ def load_fixture():
         return json.load(f)
 
 
-def test_triage_success():
+def test_triage_success(monkeypatch):
+    # Invalidate LLM provider to force placeholder fallback
+    monkeypatch.delenv("GROQ_API_KEY", raising=False)
+    monkeypatch.delenv("GROQ_MODEL", raising=False)
+    monkeypatch.setenv("LLM_PROVIDER", "invalid")
     payload = load_fixture()
     response = client.post("/triage", json=payload)
     assert response.status_code == 200
@@ -30,7 +35,9 @@ def test_triage_success():
     assert "explanation" in data
     explanation = data["explanation"]
     assert isinstance(explanation, str)
-    assert "[Placeholder]" in explanation
+    # Use deterministic placeholder generator for comparison
+    placeholder = generate_placeholder_explanation(data)
+    assert explanation == placeholder
 
 
 def test_triage_invalid_input_returns_400():

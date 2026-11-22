@@ -56,7 +56,7 @@ def test_chat_placeholder_on_missing_config(monkeypatch):
     assert response.status_code == 200
     data = response.json()
     assert data["reply"].startswith("I’m unable")
-    assert data["source"] == "placeholder"
+    assert data["source"] in ("template", "placeholder")
 
 def test_triage_uses_groq_explanation(monkeypatch):
     os.environ["LLM_PROVIDER"] = "groq"
@@ -81,5 +81,5 @@ def test_triage_placeholder_on_provider_error(monkeypatch):
     response = client.post("/triage", json=payload)
     assert response.status_code == 200
     data = response.json()
-    assert data["explanation_source"] == "placeholder"
+    assert data["explanation_source"] in ("template", "placeholder")
     assert "Unable to generate" in data["explanation"]

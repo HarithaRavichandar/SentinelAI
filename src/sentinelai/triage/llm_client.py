@@ -52,6 +52,11 @@ def _selected_provider() -> str:
     raise LLMConfigurationError(f"Unsupported LLM_PROVIDER '{provider}'. Supported: 'gemini', 'groq'.")
 
 
+def get_selected_provider() -> str:
+    """Public wrapper to retrieve verified active provider name."""
+    return _selected_provider()
+
+
 def get_explanation(class_id: int, class_label: str, probabilities: Any) -> str:
     """Delegate to the configured provider's ``get_explanation``.
 
@@ -99,6 +104,7 @@ def get_chat_reply(prompt: str) -> str:
 __all__ = [
     "LLMConfigurationError",
     "LLMError",
+    "get_selected_provider",
     "get_explanation",
     "get_chat_reply",
 ]

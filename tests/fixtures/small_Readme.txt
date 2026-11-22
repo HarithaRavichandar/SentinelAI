@@ -1,0 +1,2 @@
+Benign 0
+Malicious 1

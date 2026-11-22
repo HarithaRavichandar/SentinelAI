@@ -27,9 +27,9 @@ from sentinelai.data.split import (
 
 # Repository root (two levels up from this test file)
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DATA_PATH = REPO_ROOT / "data" / "raw" / "Data.csv"
-LABEL_PATH = REPO_ROOT / "data" / "raw" / "Label.csv"
-README_PATH = REPO_ROOT / "data" / "raw" / "Readme.txt"
+DATA_PATH = REPO_ROOT / "tests" / "fixtures" / "small_Data.csv"
+LABEL_PATH = REPO_ROOT / "tests" / "fixtures" / "small_Label.csv"
+README_PATH = REPO_ROOT / "tests" / "fixtures" / "small_Readme.txt"
 REPORT_PATH = REPO_ROOT / "reports" / "split_report_test.md"
 
 def _run_split(tmp_dir: Path, seed: int = 42):

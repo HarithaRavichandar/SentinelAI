@@ -1,10 +1,23 @@
-# SentinelAI - Initial Data Inspection Phase Dependencies
-# Note: Machine learning (scikit-learn, PyTorch, etc.) and web application
-# dependencies will be added incrementally in subsequent phases.
+# SentinelAI Core Dependencies
+# Tested & Verified with Python 3.11.7 on scikit-learn 1.3.2 serialized model artifacts
 
-pandas>=2.0.0
-numpy>=1.24.0
-fastapi
-uvicorn
-httpx
-python-dotenv>=1.0.0
+# Numerical & Machine Learning Foundation
+numpy==1.26.4
+scikit-learn==1.3.2
+scipy==1.17.1
+pandas==2.2.3
+joblib==1.6.0
+
+# Model Explainability & Attribution
+shap==0.49.1
+
+# API & Web Framework
+fastapi==0.163.1
+uvicorn==0.54.0
+pydantic==2.14.3
+httpx==0.28.1
+python-dotenv==1.2.4
+
+# Test Framework
+pytest==9.2.0
+pytest-asyncio==1.5.0
