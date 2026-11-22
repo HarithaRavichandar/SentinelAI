@@ -128,3 +128,11 @@ __pycache__/
 tmp/
 scratch/
 **/scratch/
+
+data/
+experiments/
+research/
+staging/
+
+
+reports/

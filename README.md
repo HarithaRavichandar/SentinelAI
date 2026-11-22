@@ -1,684 +1,292 @@
-# SentinelAI: Confidence-Aware Cybersecurity Alert Triage System
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.11-blue?logo=python&logoColor=white" alt="Python">
+  <img src="https://img.shields.io/badge/FastAPI-0.100+-009688?logo=fastapi&logoColor=white" alt="FastAPI">
+  <img src="https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black" alt="React">
+  <img src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white" alt="TypeScript">
+  <img src="https://img.shields.io/badge/scikit--learn-1.3-F7931E?logo=scikit-learn&logoColor=white" alt="scikit-learn">
+  <img src="https://img.shields.io/badge/License-MIT-green" alt="License">
+</p>
 
-SentinelAI is an AI-assisted cybersecurity alert triage and decision-support platform designed to assist Security Operations Center (SOC) analysts. Modern enterprise networks generate overwhelming volumes of alerts ("alert fatigue"), leading to analyst burnout, delayed incident response, and missed critical attacks. SentinelAI couples a 10-class network traffic classifier, an explainable machine learning pipeline (SHAP), a confidence-aware multi-tier triage decision engine, and an advisory conversational assistant (Laya AI) to prioritize alerts, route ambiguous flows for human review, and eliminate false-negative blind spots.
+# SentinelAI
 
-> **Operational Notice:** SentinelAI provides advisory decision support and natural language explanations. It does **not** perform live raw packet capture, nor does it execute automated network blocking or firewall remediation. All decisions and actions are advisory recommendations intended for human analyst validation.
+**AI-Powered Network Security Alert Triage System**
 
----
-
-## Table of Contents
-
-1. [Problem Statement & Key Features](#1-problem-statement--key-features)
-2. [System Architecture](#2-system-architecture)
-3. [Technology Stack](#3-technology-stack)
-4. [Dataset & Benchmark Integrity](#4-dataset--benchmark-integrity)
-5. [Machine Learning Pipeline](#5-machine-learning-pipeline)
-6. [Model Selection (`SENTINELAI_MODEL_VERSION`)](#6-model-selection)
-7. [Decision & Triage Engine](#7-decision--triage-engine)
-8. [Laya AI Assistant & Provenance Reporting](#8-laya-ai-assistant--provenance-reporting)
-9. [Feature Explainability (SHAP)](#9-feature-explainability-shap)
-10. [REST API Endpoints & Usage Examples](#10-rest-api-endpoints--usage-examples)
-11. [React Frontend Modules](#11-react-frontend-modules)
-12. [Alert Persistence & SQLite Audit Schema](#12-alert-persistence--sqlite-audit-schema)
-13. [Evaluation Results](#13-evaluation-results)
-14. [Limitations & Operational Realities](#14-limitations--operational-realities)
-15. [Installation & Setup](#15-installation--setup)
-16. [Running the Application](#16-running-the-application)
-17. [Testing Instructions](#17-testing-instructions)
-18. [Project Structure](#18-project-structure)
-19. [Future Roadmap](#19-future-roadmap)
+SentinelAI is an intelligent network intrusion detection and alert triage platform that combines a Random Forest classifier with a calibrated two-stage decision engine to automatically classify, prioritize, and triage network security alerts in real time.
 
 ---
 
-## 1. Problem Statement & Key Features
+## Overview
 
-### The Problem
-SOC analysts are inundated with tens of thousands of alerts daily. Traditional rule-based intrusion detection systems (IDS) suffer from high false-positive rates, while naive machine learning models often force hard binary decisions without communicating uncertainty. In critical security operations, a missed attack (false negative) is catastrophic, whereas an automated system that closes alerts blindly creates severe organizational risk.
+Security Operations Centers (SOCs) face overwhelming volumes of network alerts daily. SentinelAI addresses alert fatigue by automating the triage process with a machine learning pipeline that classifies network flows into 10 attack categories, assigns priority levels, and recommends analyst actions — all with SHAP-powered explainability.
 
-### Key Features
-- **10-Class Network Flow Classification**: Identifies Benign traffic alongside 9 distinct attack categories using Random Forest classification.
-- **Configurable Model Selection**: Dynamically switch between the baseline `legacy` model and the independently validated `fresh` model via environment configuration.
-- **Experimental Two-Stage Triage Policy**: Cuts missed attacks by 87.27% on held-out test data by routing ambiguous probability distributions ($0.20 \le \max(P) < 0.70$) into an analyst review queue.
-- **Feature-Level Model Interpretability**: Integrates SHAP TreeExplainer to compute exact feature attributions for every prediction.
-- **Laya Conversational Assistant**: Generates contextual triage explanations and answers security inquiries via Groq (Llama-3.3-70b) or Google Gemini (Flash).
-- **Transparent Provenance Badging**: Distinguishes verified LLM explanations (`Generated by Groq`, `Generated by Gemini`) from static template fallbacks (`Template explanation`).
-- **Persistent Audit Logging**: Stores triaged alerts, recommended actions, confidence scores, and policy execution provenance in local SQLite storage.
-- **Interactive Security Dashboard**: Modern React/TypeScript frontend providing live alert feeds, score distribution charts, interactive triage testing, and chat interfaces.
+### Key Capabilities
+
+- **10-Class Attack Detection** — Classifies network traffic as Benign or one of 9 attack types (DDoS, PortScan, Brute Force, Web Attack, Bot, Infiltration, Heartbleed, FTP-Patator, SSH-Patator)
+- **Calibrated Two-Stage Triage** — Dual-threshold policy (THETA_LOW=0.20, THETA_HIGH=0.70) assigns alerts to four priority bands: Low, Medium, High, Critical
+- **Real-Time Live Capture** — WebSocket-based packet capture with CICFlowMeter feature extraction and instant classification
+- **Batch Analysis** — Upload PCAP or CSV files for bulk flow analysis
+- **SHAP Explanations** — Feature-level attribution for every prediction, showing analysts *why* an alert was raised
+- **Unified SOC Dashboard** — Consolidated view with priority distribution, attack breakdown, trend analysis, and filterable alert table
+- **PDF Report Export** — One-click executive summary reports with priority breakdown and top threats
+- **Alert Status Tracking** — Full lifecycle workflow: New → Acknowledged → Investigating → Resolved / False Positive
+- **Alert Correlation & Grouping** — Automatic clustering of related alerts by attack class within 5-minute time windows
+- **Laya NLP Interface** — Natural language chat for querying alerts and getting plain-English explanations (advisory only — the LLM never controls security decisions)
 
 ---
 
-## 2. System Architecture
+## Architecture
 
 ```
-                    ┌──────────────────────────────────────────────┐
-                    │  Network Flow Payload (76 Numeric Features)  │
-                    └──────────────────────┬───────────────────────┘
-                                           │
-                                           ▼
-                    ┌──────────────────────────────────────────────┐
-                    │      StandardScaler Feature Preprocessor     │
-                    │   (data/models/ or data/models_fresh/)       │
-                    └──────────────────────┬───────────────────────┘
-                                           │
-                                           ▼
-                    ┌──────────────────────────────────────────────┐
-                    │    Random Forest Classifier (200 Trees)      │
-                    │   (Legacy Baseline or Fresh Group-Aware)     │
-                    └──────────────────────┬───────────────────────┘
-                                           │
-                                           ▼ Multiclass Probabilities (0..9)
-                    ┌──────────────────────────────────────────────┐
-                    │            Triage Decision Engine            │
-                    │                                              │
-                    │  [SENTINELAI_TWO_STAGE_TRIAGE=false]         │
-                    │  • Legacy deterministic heuristic rules      │
-                    │  • Margin checks & high-confusion safeguards │
-                    │                                              │
-                    │  [SENTINELAI_TWO_STAGE_TRIAGE=true]          │
-                    │  • Zone 1: Auto-Benign (max(P) < 0.20)       │
-                    │  • Zone 2: Review Band (0.20 <= max < 0.70)  │
-                    │  • Zone 3: Threat Escalation (max >= 0.70)   │
-                    └───────────┬──────────────────────┬───────────┘
-                                │                      │
-                 Decision & Confidence       Probabilities & Class
-                                │                      │
-                                ▼                      ▼
-    ┌──────────────────────────────────┐   ┌───────────────────────────────────┐
-    │     SHAP Feature Attribution     │   │      Laya AI Explanation         │
-    │  • TreeExplainer contributions   │   │  • Groq (Llama 3.3) / Gemini      │
-    │  • Local feature impact          │   │  • Static template fallback       │
-    │                                  │   │  • Provenance: groq/gemini/tmpl   │
-    └──────────────────┬───────────────┘   │  • (Advisory only — no decisions) │
-                       │                   └─────────────────┬─────────────────┘
-                       │                                     │
-                       └───────────────────┬─────────────────┘
-                                           │
-                                           ▼
-                    ┌──────────────────────────────────────────────┐
-                    │           FastAPI Application Layer          │
-                    │   /predict  /triage  /decision  /chat        │
-                    │   /alerts   /sample  /health    /status      │
-                    └──────────────┬──────────────────────┬────────┘
-                                   │                      │
-                                   ▼                      ▼
-                    ┌──────────────────────┐  ┌────────────────────────┐
-                    │  SQLite Audit Store  │  │  React / TS Dashboard  │
-                    │  (data/alerts.db)    │  │  (Vite + Tailwind CSS) │
-                    └──────────────────────┘  └────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│                    React Frontend                        │
+│  ┌──────────┐ ┌───────────┐ ┌──────────┐ ┌───────────┐ │
+│  │ Dashboard │ │LiveCapture│ │BatchUpload│ │  ChatView │ │
+│  └────┬─────┘ └─────┬─────┘ └────┬─────┘ └─────┬─────┘ │
+│       └──────────────┼───────────┘              │       │
+│              AlertStatsContext                   │       │
+└──────────────────────┬──────────────────────────┘       │
+                       │ REST + WebSocket                  │
+┌──────────────────────┴──────────────────────────────────┐
+│                   FastAPI Backend                        │
+│  ┌────────────┐ ┌────────────────┐ ┌──────────────────┐ │
+│  │  API Layer │ │ Decision Engine│ │  SHAP Explainer  │ │
+│  └──────┬─────┘ └───────┬────────┘ └────────┬─────────┘ │
+│         │               │                    │           │
+│  ┌──────┴─────┐ ┌───────┴────────┐ ┌────────┴─────────┐│
+│  │  Storage   │ │ RF Classifier  │ │  Live Capture    ││
+│  │  (SQLite)  │ │   (C7 Model)   │ │    Engine        ││
+│  └────────────┘ └────────────────┘ └──────────────────┘ │
+└─────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 3. Technology Stack
+## Project Structure
 
-### Backend
-- **Python 3.11**
-- **FastAPI (0.162+)**: High-performance asynchronous REST API framework.
-- **Uvicorn (0.54+)**: Lightning-fast ASGI production web server.
-- **Scikit-learn (1.3.2)**: Machine learning classification (`RandomForestClassifier`) and scaling (`StandardScaler`).
-- **SHAP (0.49.1)**: Shapley Additive Explanations for tree-based feature attribution.
-- **Pydantic v2 (2.14+)**: Robust schema definition, type safety, and runtime data validation.
-- **SQLite3**: Embedded transactional relational storage for alert history and audit logging.
-- **HTTPX (0.28+)**: Asynchronous HTTP client for provider communications.
-
-### AI & LLM Providers
-- **Groq API**: High-throughput inference for `llama-3.3-70b-versatile` (default provider).
-- **Google Gemini API**: Native integration for `gemini-1.5-flash` and related models.
-- **Deterministic Static Template**: Fallback explanation engine when external LLM credentials are absent or network requests fail.
-
-### Frontend
-- **React 18**: Component-driven declarative UI.
-- **TypeScript 5.4**: Static typing across components, state contexts, and API clients.
-- **Vite 5.2**: Ultra-fast frontend bundler and local development server.
-- **Tailwind CSS**: Modern utility-first responsive styling.
-- **Recharts**: Responsive charting library for multiclass probability bars and distributions.
-- **React Markdown & Remark GFM**: Rich markdown rendering for conversational assistant replies.
-- **Lucide React**: Modern security and operational icon library.
-
----
-
-## 4. Dataset & Benchmark Integrity
-
-SentinelAI is trained and evaluated on network flow traffic data derived from the **UNSW-NB15** cybersecurity benchmark:
-
-- **Total Records**: 447,915 network flows.
-- **Features**: 76 numerical flow attributes (durations, packet sizes, inter-arrival times, TCP window sizes, jitter, flags, etc.).
-- **Traffic Categories (10 Classes)**:
-  - `0: Benign` (Normal background network traffic)
-  - `1: Analysis` (Port scans, vulnerability probes)
-  - `2: Backdoor` (Hidden unauthorized entry points)
-  - `3: DoS` (Denial of Service floods)
-  - `4: Exploits` (Known software vulnerability executions)
-  - `5: Fuzzers` (Automated random input boundary testing)
-  - `6: Generic` (Cipher and block cipher collision attacks)
-  - `7: Reconnaissance` (Host discovery, port mapping)
-  - `8: Shellcode` (Small executable code payloads)
-  - `9: Worms` (Self-replicating malware propagation)
-
-### Group-Aware Split & Duplicate Quarantine
-To prevent optimistic evaluation bias caused by exact feature duplicates:
-1. **Conflicting Group Quarantine**: 497 duplicate feature groups comprising **8,909 rows** had identical 76-feature vectors but conflicting class labels. These flows were isolated into `conflict_mask_fresh.npy` to eliminate label noise.
-2. **Group-Aware Splitting (Seed 101)**: All identical feature rows were placed into the same split partition, guaranteeing zero feature overlap between partitions:
-   - **Train Set (`train_mask_fresh.npy`)**: 307,987 flows
-   - **Validation Set (`val_mask_fresh.npy`)**: 65,167 flows (used solely for policy threshold calibration)
-   - **Held-Out Test Set (`test_mask_fresh.npy`)**: 65,852 flows (unblinded exactly once for final reporting)
-
----
-
-## 5. Machine Learning Pipeline
-
-### Feature Preprocessing
-- Preprocessor: Scikit-learn `StandardScaler`.
-- Fitted strictly on training set flows (`train_mask_fresh.npy`).
-- Zero validation or test data statistics leak into the scaler.
-
-### Classifier Configuration
-- Model: `RandomForestClassifier`
-- Hyperparameters:
-  - `n_estimators = 200`
-  - `class_weight = "balanced"`
-  - `random_state = 101`
-  - `n_jobs = 4`
-- Optimization: Class-weight balancing compensates for acute class imbalance (e.g., Worms and Shellcode have far fewer samples than Benign and Generic).
-
----
-
-## 6. Model Selection
-
-SentinelAI supports dynamic model selection without overwriting or destroying legacy artifacts. The active model is controlled via the `SENTINELAI_MODEL_VERSION` environment variable:
-
-```bash
-# Select the legacy production baseline model (DEFAULT):
-export SENTINELAI_MODEL_VERSION=legacy
-
-# Select the clean, group-aware fresh model:
-export SENTINELAI_MODEL_VERSION=fresh
 ```
-
-### Artifact Paths
-
-| Model Version | Model Artifact | Preprocessor Artifact | Description |
-| :--- | :--- | :--- | :--- |
-| **`legacy`** *(Default)* | `data/models/random_forest_balanced.pkl` | `data/processed/preprocessor_balanced.pkl` | Production baseline model. Loaded by default when variable is unset. |
-| **`fresh`** | `data/models_fresh/random_forest_fresh.pkl` | `data/models_fresh/preprocessor_fresh.pkl` | Clean model trained strictly on group-aware partition `train_fresh`. |
-
-The active model version and artifact verification hashes can be queried at runtime via the `GET /status` API endpoint.
-
----
-
-## 7. Decision & Triage Engine
-
-SentinelAI pairs machine learning classification with a structured decision engine. Rather than outputting raw predictions directly to firewalls, it calculates an advisory priority, decision confidence, and human-review flag.
-
-### Policy Modes (`SENTINELAI_TWO_STAGE_TRIAGE`)
-
-```bash
-# Use legacy single-stage decision logic (DEFAULT):
-export SENTINELAI_TWO_STAGE_TRIAGE=false
-
-# Enable validation-calibrated two-stage decision policy:
-export SENTINELAI_TWO_STAGE_TRIAGE=true
-```
-
-#### 1. Legacy Policy Mode (`false`)
-- Evaluates predictions using single-stage heuristic rules.
-- Enforces human review when prediction margins are narrow or when classes belong to legacy high-confusion sets (`{1, 8}`).
-- Outputs `policy_mode = "legacy"`.
-
-#### 2. Experimental Two-Stage Policy Mode (`true`)
-Loads frozen parameters from `src/sentinelai/triage/calibrated_params_fresh.json`:
-- **Frozen Thresholds**: $\theta_{\text{low}} = 0.20$, $\theta_{\text{high}} = 0.70$.
-- **High-Confusion Classes**: `{1}` (*Analysis*).
-- **Class Reliability Weights**: Derived strictly from the clean validation split (e.g., Benign: 0.98, Analysis: 0.22, Generic: 0.81).
-
-#### Triage Routing Zones
-
-| Zone | Condition | Advisory Action | Review Flag | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| **Zone 1: Auto-Benign** | $\max(P) < 0.20$ | `auto_close_benign` | `false` | Ambiguous noise and sub-threshold alerts are filtered safely. |
-| **Zone 2: Review Band** | $0.20 \le \max(P) < 0.70$ | `route_to_analyst_review` | `true` | Ambiguous predictions and weak attacks routed to human analysts with Medium priority. |
-| **Zone 3: Threat Escalation** | $\max(P) \ge 0.70$ | Categorized by threat tier | Conditional | High-confidence attacks escalated to High/Critical. Critical classes (*Exploits*, *Backdoor*, *Shellcode*) enforce quarantine and mandatory human review. |
-
-### Model-Policy Pairing Matrix
-
-- **`legacy` Model + `legacy` Policy**: Standard production baseline.
-- **`fresh` Model + `two_stage_experimental` Policy**: Fully validated fresh configuration.
-- **`legacy` Model + `two_stage_experimental` Policy**: Permitted for experimentation; decision output attaches an explicit operational warning and logs uncertainty reasons.
-
----
-
-## 8. Laya AI Assistant & Provenance Reporting
-
-Laya is SentinelAI's interactive conversational assistant and natural-language explanation module.
-
-> **CRITICAL ARCHITECTURAL BOUNDARY:**  
-> Laya is strictly an **advisory and explanatory interface**. Laya does **not** classify network traffic, does **not** evaluate triage policies, does **not** assign alert priorities, and does **not** execute automated response actions.
-
-### Supported Providers
-- **Groq (`LLM_PROVIDER=groq`)**: Default provider utilizing high-speed `llama-3.3-70b-versatile` inference.
-- **Gemini (`LLM_PROVIDER=gemini`)**: Google Gemini API utilizing `gemini-1.5-flash`.
-- **Static Template (`template`)**: Deterministic local fallback in `placeholder.py` when credentials are absent or APIs fail.
-
-### Transparent Provenance Badges
-To prevent false attribution, SentinelAI reports provenance in both `/chat` and `/triage`:
-
-```json
-"explanation_provenance": {
-  "source": "groq",
-  "is_llm": true,
-  "provider": "groq",
-  "label": "Generated by Groq"
-}
-```
-
-The frontend visualizes these as color-coded badges:
-- 🟢 `Generated by Groq`
-- 🔵 `Generated by Gemini`
-- ⚪ `Template explanation`
-- Responses whose source cannot be verified do not display a provider badge.
-
----
-
-## 9. Feature Explainability (SHAP)
-
-SentinelAI integrates `shap.TreeExplainer` directly with the Random Forest model:
-- **Local Feature Impact**: Computes exact Shapley values for the 76 features corresponding to the predicted class.
-- **Positive vs. Negative Impact**: Identifies which network attributes increased the model's confidence for the predicted class and which drove it down.
-- **Analyst Inspection**: Available via `POST /triage?explain_shap=true` and visualized interactively in the web dashboard's SHAP Top Features component.
-
----
-
-## 10. REST API Endpoints & Usage Examples
-
-The FastAPI service runs on port `8000` by default.
-
-### Endpoints Overview
-
-| Method | Path | Description |
-| :--- | :--- | :--- |
-| `GET` | `/health` | Health check probe (supports optional `?model_info=true`). |
-| `GET` | `/status` | System health, active model version, and artifact paths. |
-| `POST` | `/predict` | Raw classification (76 features $\to$ class ID, label, probabilities). |
-| `POST` | `/triage` | Full pipeline: classification + explanation + SHAP + decision engine + SQLite persistence. |
-| `POST` | `/decision`| Returns structured triage decision directly. |
-| `GET` | `/alerts` | Retrieves recent triaged alerts from SQLite (`?limit=50`). |
-| `GET` | `/sample` | Returns a real offline sample from raw dataset (`?label=Exploits`). |
-| `POST` | `/chat` | Conversational assistant with multi-turn history. |
-
-### Example 1: Check System Health & Status
-```bash
-# Basic health probe
-curl -X GET "http://127.0.0.1:8000/health"
-```
-**Response:**
-```json
-{
-  "status": "ok"
-}
-```
-
-```bash
-# Health probe with active model version
-curl -X GET "http://127.0.0.1:8000/health?model_info=true"
-```
-**Response:**
-```json
-{
-  "status": "ok",
-  "model_version": "legacy"
-}
-```
-
-```bash
-# Detailed system status and artifact configuration
-curl -X GET "http://127.0.0.1:8000/status"
-```
-**Response:**
-```json
-{
-  "status": "ok",
-  "model_version": "legacy",
-  "model_path": "data\\models\\random_forest_balanced.pkl",
-  "columns_count": 76
-}
-```
-
-### Example 2: Run Full Triage with SHAP
-```bash
-curl -X POST "http://127.0.0.1:8000/triage?explain_shap=true" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "dur": 0.000011, "proto": 113, "service": 0, "state": 2,
-    "spkts": 2, "dpkts": 0, "sbytes": 496, "dbytes": 0,
-    ...
-  }'
-```
-**Response:**
-```json
-{
-  "class_id": 4,
-  "class_label": "Exploits",
-  "probabilities": { "0": 0.05, "4": 0.82, ... },
-  "explanation": "High packet volume with zero return bytes indicates potential exploit execution.",
-  "explanation_source": "groq",
-  "explanation_provenance": {
-    "source": "groq",
-    "is_llm": true,
-    "provider": "groq",
-    "label": "Generated by Groq"
-  },
-  "shap_explanations": { "sbytes": 0.142, "dur": -0.051 },
-  "decision": {
-    "predicted_class": "Exploits",
-    "priority": "critical",
-    "decision_status": "review_required",
-    "recommended_action": "quarantine_traffic_and_escalate",
-    "decision_confidence": 0.724,
-    "policy_mode": "legacy",
-    "requires_human_review": true,
-    "evidence": ["High severity attack class 'Exploits' detected."],
-    "uncertainty_reasons": []
-  },
-  "latencyMs": 42.1,
-  "id": 14
-}
-```
-
-### Example 3: Interact with Laya Chat
-```bash
-curl -X POST "http://127.0.0.1:8000/chat" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "message": "What investigative steps are recommended for an Exploits alert?"
-  }'
-```
-**Response:**
-```json
-{
-  "reply": "For an Exploits alert, inspect destination host process logs, verify whether payload traffic triggered a service crash, and verify network segmentation.",
-  "assistant": "Laya",
-  "source": "groq",
-  "provenance": {
-    "source": "groq",
-    "is_llm": true,
-    "provider": "groq",
-    "label": "Generated by Groq"
-  }
-}
+SentinelAI/
+├── frontend/                    # React + TypeScript + Vite
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── Dashboard.tsx        # Unified SOC dashboard
+│   │   │   ├── LiveCapture.tsx      # Real-time packet capture UI
+│   │   │   ├── BatchUpload.tsx      # Batch file analysis
+│   │   │   ├── ChatView.tsx         # Laya NLP interface
+│   │   │   ├── TriageView.tsx       # Manual triage view
+│   │   │   ├── AlertStatsContext.tsx # Shared alert state provider
+│   │   │   ├── Sidebar.tsx          # Navigation sidebar
+│   │   │   └── ...
+│   │   ├── App.tsx
+│   │   ├── main.tsx
+│   │   └── index.css                # SOC-themed dark design system
+│   ├── package.json
+│   └── vite.config.ts
+│
+├── src/sentinelai/              # Python backend package
+│   ├── api.py                       # FastAPI routes & endpoints
+│   ├── batch.py                     # Batch processing pipeline
+│   ├── model.py                     # Model loading & inference
+│   ├── shap_explanations.py         # SHAP feature attribution
+│   ├── laya_client.py               # LLM integration (advisory only)
+│   ├── capture/                     # Live capture engine
+│   │   ├── engine.py                    # Packet capture orchestrator
+│   │   ├── feature_extractor.py         # CICFlowMeter feature extraction
+│   │   ├── flow_table.py               # Flow tracking & aggregation
+│   │   ├── flow_state.py               # Flow state management
+│   │   ├── live_session.py             # WebSocket session handler
+│   │   └── api_routes.py              # Capture-specific routes
+│   ├── storage/
+│   │   └── db.py                    # SQLite persistence layer
+│   └── triage/
+│       ├── decision_engine.py       # Two-stage triage policy
+│       └── calibrated_params_fresh.json
+│
+├── scripts/                     # Training & evaluation
+│   ├── train_fresh_model.py
+│   ├── evaluate_fresh_pipeline.py
+│   ├── calibrate_fresh_policy.py
+│   ├── validate_model.py
+│   ├── benchmark_c7.py
+│   └── ...
+│
+├── tests/                       # Test suite (27 test files)
+│   ├── test_api_alerts.py
+│   ├── test_calibrated_policy.py
+│   ├── test_triage_decision.py
+│   ├── test_batch.py
+│   ├── test_storage.py
+│   └── ...
+│
+├── models/                      # Trained model artifacts
+├── requirements.txt
+└── README.md
 ```
 
 ---
 
-## 11. React Frontend Modules
-
-The frontend is organized into modular React/TypeScript views in `frontend/src/`:
-
-- **`Dashboard.tsx` (`/`)**: Executive overview displaying alert volume cards, priority distributions (Critical, High, Medium, Low), system health status, search and filtering controls, CSV export, and the complete Alert History & Triage Records audit table.
-- **`TriageView.tsx` (`/triage`)**: Interactive analyst workspace. Allows loading real dataset samples by class, modifying raw feature payloads, executing triage with SHAP, inspecting score distributions, reviewing AI explanations with provenance badges, and viewing advisory decision cards.
-- **`ChatView.tsx` (`/chat`)**: Multi-turn conversational interface with Laya. Supports markdown formatting, threat analysis discussions, and provenance source indicators.
-- **`HealthView.tsx`**: Diagnostics console displaying backend status, active model versions, and expected feature counts.
-- **`ShapTopFeatures.tsx`**: Horizontal bar chart component visualizing top positive and negative SHAP feature contributions.
-- **`AlertStatsContext.tsx`**: React context provider managing global alert counters and synchronization across views.
-
-> [!NOTE]
-> Navigation in `Sidebar.tsx` and routing in `App.tsx` are focused strictly on the three fully implemented views (`/`, `/triage`, `/chat`). Unfinished prototype placeholders (`/analysis`, `/traffic`, `/reports`, `/settings`) are excluded from active navigation, and unmapped routes silently redirect to `/` via `<Navigate to="/" replace />`.
-
----
-
-## 12. Alert Persistence & SQLite Audit Schema
-
-All successful triage requests are persisted into local SQLite storage (`data/alerts.db` by default, configurable via the `SENTINELAI_DB_PATH` environment variable):
-
-```sql
-CREATE TABLE IF NOT EXISTS alerts (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    class_id INTEGER NOT NULL,
-    class_label TEXT NOT NULL,
-    probabilities TEXT NOT NULL,
-    decision_priority TEXT,
-    decision_status TEXT,
-    recommended_action TEXT,
-    policy_mode TEXT,
-    decision_confidence REAL,
-    requires_human_review BOOLEAN,
-    decision_json TEXT,
-    explanation TEXT,
-    explanation_source TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
-
-- **Policy Provenance**: Persists `policy_mode` (`"legacy"` vs `"two_stage_experimental"`).
-- **Historical Compatibility**: Historical alerts recorded prior to provenance tracking (`policy_mode = NULL`) deserialize safely as unknown/legacy.
-
----
-
-## 13. Evaluation Results
-
-### Held-Out Clean Test Set Performance (`test_fresh`: 65,852 flows)
-
-The clean fresh model was evaluated single-pass on held-out test flows with strictly zero data leakage:
-
-| Metric | Score | Notes |
-| :--- | :--- | :--- |
-| **Multiclass Accuracy** | **93.62%** | Correct classification across all 10 classes |
-| **Balanced Accuracy** | **54.41%** | Reflects acute real-world class imbalance |
-| **Macro F1-Score** | **0.5955** | Unweighted mean across all 10 classes |
-| **Weighted F1-Score** | **0.9353** | Support-weighted mean F1 |
-| **Test Benign False Positive Rate (FPR)** | **0.951%** | 510 false alarms out of 53,618 benign test flows |
-
-### Two-Stage Policy Evaluation vs. Baseline
-
-| Evaluation Dimension | Legacy Baseline | Two-Stage Policy ($0.20, 0.70$) | Improvement |
-| :--- | :--- | :--- | :--- |
-| **Attack Detection Recall** | 98.202% | **99.771%** | +1.569% absolute recall |
-| **Missed Attacks (False Negatives)**| 220 missed | **28 missed** | **87.27% reduction** (192 caught) |
-| **Analyst Review Queue Volume** | 0% (auto-decision) | 3,059 flows (4.65%) | Targeted human review |
-| **Review Queue Attack Concentration**| N/A | **78.72% attacks** | High analyst time efficiency |
-
----
-
-## 14. Limitations & Operational Realities
-
-1. **Benchmark Re-partitioning**: The fresh split eliminates circular test-set tuning and exact duplicate group leakage, but it remains an internal re-partitioning of the UNSW-NB15 benchmark. It is **not** an independent external validation against live modern enterprise networks.
-2. **Acute Class Imbalance**: Minor attack classes (such as Worms with 130 training flows and Shellcode with 378 training flows) exhibit lower recall than dominant classes like Benign and Generic.
-3. **Validation FPR Constraint**: During validation calibration, the frozen threshold pair $(0.20, 0.70)$ exhibited a Benign False Positive Rate of 1.292%, slightly above the nominal 1.0% target. In accordance with strict evaluation protocols, thresholds were frozen without post-hoc tuning on test data (test FPR was 0.951%).
-4. **No Live Packet Capture**: SentinelAI consumes pre-extracted 76-feature tabular flow vectors. It does not ingest raw PCAP or bind to network interfaces directly.
-5. **Advisory Decision Making Only**: SentinelAI recommendations (`quarantine_traffic_and_escalate`, `auto_close_benign`, etc.) are advisory support. They do not execute automated firewall blocks or policy enforcement.
-6. **Feature Flag Defaults**: The experimental two-stage policy is **OFF by default** (`SENTINELAI_TWO_STAGE_TRIAGE=false`).
-
----
-
-## 15. Installation & Setup
+## Getting Started
 
 ### Prerequisites
-- **Python**: Version 3.10 or 3.11
-- **Node.js**: Version 18+ and **npm**
-- **Git**
 
-### 1. Clone Repository & Create Virtual Environment
+- Python 3.11+
+- Node.js 18+
+- npm or yarn
+
+### Backend Setup
+
 ```bash
+# Clone the repository
 git clone https://github.com/HarithaRavichandar/SentinelAI.git
 cd SentinelAI
 
-# Create Python virtual environment
+# Create and activate virtual environment
 python -m venv .venv
+source .venv/bin/activate        # Linux/macOS
+# .venv\Scripts\Activate.ps1    # Windows PowerShell
 
-# Activate virtual environment
-# Windows (PowerShell):
-.\.venv\Scripts\Activate.ps1
-# Linux / macOS:
-source .venv/bin/activate
-```
-
-### 2. Install Backend Dependencies
-```bash
+# Install dependencies
 pip install -r requirements.txt
+
+# Start the backend server
+uvicorn sentinelai.api:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### 3. Acquire Model Artifacts
-SentinelAI relies on serialized Random Forest models (~900 MB each) that are excluded from the main Git repository to maintain a lightweight clone.
+### Frontend Setup
 
-You can download and verify the model artifacts using the automated acquisition script:
-```bash
-# Download and verify models from GitHub Release assets
-python scripts/download_models.py
-
-# Or if you already have local models, verify their SHA-256 integrity:
-python scripts/download_models.py --verify-only
-```
-Alternatively, you can train a fresh model directly from the benchmark dataset using the reproducible training pipeline:
-```bash
-python scripts/train_fresh_model.py
-```
-
-### 4. Install Frontend Dependencies
 ```bash
 cd frontend
+
+# Install dependencies
 npm install
-cd ..
-```
 
-### 5. Configure Environment Variables
-Copy the template configuration file:
-```bash
-# Windows (PowerShell):
-Copy-Item .env.example .env
-
-# Linux / macOS:
-cp .env.example .env
-```
-Edit `.env` to configure your API keys (Groq or Gemini) and operational flags.
-
----
-
-## 16. Running the Application
-
-### 1. Start the Backend API
-From the project root with the virtual environment activated:
-```bash
-uvicorn src.sentinelai.api:app --host 127.0.0.1 --port 8000 --reload
-```
-The interactive Swagger API documentation will be available at:
-`http://127.0.0.1:8000/docs`
-
-### 2. Start the Frontend Dashboard
-In a separate terminal window:
-```bash
-cd frontend
+# Start development server
 npm run dev
 ```
-The React security dashboard will be available at:
-`http://localhost:5173`
+
+The frontend will be available at `http://localhost:5173` and proxies API requests to the backend at `http://localhost:8000`.
 
 ---
 
-## 17. Testing Instructions
+## Usage
 
-SentinelAI includes comprehensive test suites covering model selection, decision calibration, Laya provenance, and API contracts.
+### Live Capture
 
-Run tests using `pytest` from the project root:
+Navigate to the **Live Capture** view to monitor network traffic in real time. The system captures packets, extracts CICFlowMeter features, classifies flows through the C7 model, and streams results to the dashboard via WebSocket with automatic reconnection.
+
+### Batch Analysis
+
+Upload a PCAP or CSV file through the **Batch Upload** view for bulk analysis. Results are processed through the same classification and triage pipeline, then populated into the unified dashboard.
+
+### Dashboard
+
+The **Dashboard** aggregates alerts from all sources (triage, live capture, batch upload) and provides:
+
+- Priority distribution bar chart
+- Attack class breakdown pie chart
+- Alert trend line chart over time
+- Filterable and sortable alert table with inline status management
+- Correlated incident groups (alerts clustered by attack type within 5-minute windows)
+- CSV export and PDF report generation
+
+### Alert Lifecycle
+
+Track each alert through its lifecycle using the status dropdown in the alert table:
+
+| Status | Description |
+|--------|-------------|
+| `New` | Freshly detected, awaiting analyst review |
+| `Acknowledged` | Analyst has seen the alert |
+| `Investigating` | Active investigation in progress |
+| `Resolved` | Confirmed threat, remediated |
+| `False Positive` | Determined to be benign |
+
+---
+
+## Model Details
+
+| Property | Value |
+|----------|-------|
+| Algorithm | Random Forest (scikit-learn 1.3.2) |
+| Classes | 10 (Benign + 9 attack types) |
+| Features | 76 CICFlowMeter network flow features |
+| Training Data | CIC-IDS2017 dataset |
+| Triage Policy | Two-stage calibrated thresholds |
+| Explainability | SHAP TreeExplainer |
+
+### Triage Thresholds
+
+```
+p_attack < 0.20  →  LOW priority      →  Auto-close
+0.20 ≤ p < 0.70  →  MEDIUM priority   →  Queue for review
+0.70 ≤ p < 0.90  →  HIGH priority     →  Escalate
+p_attack ≥ 0.90  →  CRITICAL priority →  Immediate response
+```
+
+> **Design principle:** The LLM component (Laya) provides natural language explanations only. All security classification and triage decisions are made exclusively by the calibrated ML pipeline — the LLM never controls security-critical actions.
+
+---
+
+## API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/triage` | Classify a single flow |
+| `POST` | `/api/batch` | Submit batch analysis job |
+| `GET` | `/api/batch/{job_id}` | Poll batch job status |
+| `GET` | `/api/alerts` | Retrieve stored alerts |
+| `PATCH` | `/api/alerts/{id}/status` | Update alert status |
+| `POST` | `/api/shap` | Get SHAP explanations |
+| `GET` | `/api/health` | Backend health check |
+| `WS` | `/ws/capture` | Live capture WebSocket |
+
+---
+
+## Testing
 
 ```bash
-# Run all unit and integration tests
+# Run the full test suite
 pytest
 
-# Test Laya AI explanation provenance reporting
-pytest tests/test_laya_provenance.py -v
+# Run with verbose output
+pytest -v
 
-# Test validation-calibrated two-stage decision policy
-pytest tests/test_calibrated_policy.py -v
-
-# Test configurable model selection (legacy vs fresh)
-pytest tests/test_model_selection.py -v
-
-# Test core triage decision logic and safeguards
-pytest tests/test_triage_decision.py -v
-
-# Test API endpoints and provider selection
-pytest tests/test_provider_selection.py tests/test_api_triage.py -v
-```
-
-To build and verify the frontend TypeScript code:
-```bash
-cd frontend
-npm run build
+# Run specific test module
+pytest tests/test_calibrated_policy.py
 ```
 
 ---
 
-## 18. Project Structure
+## Tech Stack
 
-```text
-SentinelAI/
-├── .env.example                       # Environment configuration template
-├── README.md                          # Comprehensive project documentation
-├── requirements.txt                   # Backend Python dependencies
-├── data/
-│   ├── models/                        # Legacy model artifacts
-│   │   └── random_forest_balanced.pkl
-│   ├── models_fresh/                  # Clean fresh model artifacts
-│   │   ├── random_forest_fresh.pkl
-│   │   └── preprocessor_fresh.pkl
-│   ├── processed/                     # Legacy preprocessor artifacts
-│   │   └── preprocessor_balanced.pkl
-│   └── processed_fresh/               # Group-aware masks and metadata
-│       ├── train_mask_fresh.npy
-│       ├── val_mask_fresh.npy
-│       ├── test_mask_fresh.npy
-│       └── conflict_mask_fresh.npy
-├── frontend/                          # React + TypeScript frontend
-│   ├── package.json
-│   ├── vite.config.ts
-│   └── src/
-│       ├── api.ts                     # API client wrapper
-│       ├── App.tsx                    # Main layout and view routing
-│       └── components/
-│           ├── Dashboard.tsx          # Security overview and alert feed
-│           ├── TriageView.tsx         # Interactive alert triage workspace
-│           ├── ChatView.tsx           # Laya conversational assistant chat
-│           ├── HealthView.tsx         # System status & model inspection
-│           ├── ShapTopFeatures.tsx    # SHAP feature attribution bar chart
-│           └── Sidebar.tsx            # Navigation menu
-├── reports/                           # Audit and evaluation reports
-│   ├── final_fresh_evaluation_report.md
-│   ├── fresh_policy_calibration_report.md
-│   └── fresh_split_report.md
-├── scripts/                           # Standalone training & evaluation scripts
-│   ├── prepare_fresh_dataset.py       # Group-aware dataset partitioner
-│   ├── train_fresh_model.py           # Fresh Random Forest trainer
-│   ├── calibrate_fresh_policy.py      # Validation-only policy calibrator
-│   └── evaluate_fresh_pipeline.py     # Single-pass held-out test evaluator
-├── src/
-│   └── sentinelai/                    # Core Python application package
-│       ├── __init__.py
-│       ├── api.py                     # FastAPI routes and middleware
-│       ├── inference.py               # Configurable InferenceEngine
-│       ├── storage/                   # SQLite database manager
-│       │   ├── __init__.py
-│       │   └── db.py
-│       └── triage/                    # Triage decision and AI explanation
-│           ├── calibrated_params_fresh.json
-│           ├── decision_engine.py     # Multi-tier triage decision engine
-│           ├── gemini_client.py       # Google Gemini LLM client
-│           ├── groq_client.py         # Groq LLM client
-│           ├── llm_client.py          # Unified LLM provider façade
-│           ├── placeholder.py         # Deterministic template & provenance builder
-│           └── prompt_builder.py      # Structured prompt builder
-└── tests/                             # Pytest automated test suites
-    ├── test_api.py
-    ├── test_calibrated_policy.py
-    ├── test_laya_provenance.py
-    ├── test_model_selection.py
-    ├── test_provider_selection.py
-    └── test_triage_decision.py
-```
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 18, TypeScript, Vite, Recharts |
+| Backend | FastAPI, Uvicorn, Python 3.11 |
+| ML/AI | scikit-learn, SHAP, Random Forest |
+| Database | SQLite |
+| Live Capture | WebSocket, CICFlowMeter |
+| NLP | Laya (LLM-based, advisory only) |
 
 ---
 
-## 19. Future Roadmap
+## Contributing
 
-1. **External Out-of-Distribution Validation**: Evaluate model resilience against modern public datasets (e.g. CIC-IDS2017, TON_IoT) to test transferability against unseen attack tools.
-2. **Live PCAP & Zeek/Suricata Ingestion**: Develop a stream ingestion connector that extracts the required 76 numerical flow features from live packet captures or Zeek log streams in real time.
-3. **Analyst Feedback Loop**: Allow SOC analysts to tag false alarms and confirmed incidents directly within the dashboard, feeding an active-learning pipeline for periodic policy recalibration.
-4. **Alert Correlation & Attack Graphing**: Correlate related alerts across identical source/destination IP pairs over rolling time windows to reconstruct multi-stage attack campaigns.
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/your-feature`)
+3. Commit your changes (`git commit -m 'feat: add your feature'`)
+4. Push to the branch (`git push origin feature/your-feature`)
+5. Open a Pull Request
+
+---
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+---
+
+## Acknowledgments
+
+- [CIC-IDS2017 Dataset](https://www.unb.ca/cic/datasets/ids-2017.html) — Canadian Institute for Cybersecurity
+- [CICFlowMeter](https://github.com/ahlashkari/CICFlowMeter) — Network flow feature extraction
+- [SHAP](https://github.com/shap/shap) — SHapley Additive exPlanations for model interpretability
