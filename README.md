@@ -29,18 +29,35 @@ SentinelAI automates the triage pipeline. A trained Random Forest classifier ana
 
 Every decision is explainable. SHAP-powered feature attribution shows analysts *why* each alert was flagged, building trust in the automation and enabling faster investigation.
 
+<p align="center">
+  <img src="data/screenshots/Dashboard Overview.jpeg" alt="SentinelAI Dashboard" width="90%">
+  <br><em>Unified SOC Dashboard — real-time KPIs, classification breakdown, and source distribution</em>
+</p>
+
 ---
 
-##  Features
+## ✨ Features
 
 ### Real-Time Live Capture
 Monitor network traffic as it happens. SentinelAI captures packets, extracts 76 CICFlowMeter features from each flow, runs classification through the trained model, and streams results to the dashboard — all via WebSocket with automatic reconnection and exponential backoff. Alerts appear on the dashboard the moment they're detected.
+
+<p align="center">
+  <img src="data/screenshots/Live Capture.jpeg" alt="Live Capture" width="90%">
+  <br><em>Real-time packet classification with priority-colored rows and flow details</em>
+</p>
 
 ### Batch Analysis
 Upload PCAP or CSV files for bulk analysis of historical traffic. The batch pipeline processes every flow through the same classification and triage engine, then feeds results into the unified dashboard alongside live alerts. Useful for incident investigation, threat hunting, or auditing captured traffic.
 
 ### Unified SOC Dashboard
-A consolidated command center that aggregates alerts from every source — manual triage, live capture, and batch uploads — into a single view. The dashboard includes:
+A consolidated command center that aggregates alerts from every source — manual triage, live capture, and batch uploads — into a single view.
+
+<p align="center">
+  <img src="data/screenshots/Dashboard Analytics.jpeg" alt="Dashboard Analytics" width="90%">
+  <br><em>Threat distribution, activity timeline, and correlated incident groups</em>
+</p>
+
+The dashboard includes:
 
 - **Priority distribution** — Bar chart showing alert volume across Low, Medium, High, and Critical bands
 - **Attack class breakdown** — Pie chart of detected attack types (DDoS, PortScan, Brute Force, Web Attack, Bot, etc.)
@@ -50,6 +67,11 @@ A consolidated command center that aggregates alerts from every source — manua
 
 ### Alert Status Tracking
 Track every alert through its full lifecycle with an inline status dropdown directly in the alert table:
+
+<p align="center">
+  <img src="data/screenshots/Alert History.jpeg" alt="Alert History" width="90%">
+  <br><em>Persistent alert table with priority badges, source tags, filters, and CSV/PDF export</em>
+</p>
 
 **New** → **Acknowledged** → **Investigating** → **Resolved** or **False Positive**
 
@@ -75,26 +97,32 @@ Every prediction comes with feature-level attribution powered by SHAP TreeExplai
 ### Laya — Natural Language Assistant
 Ask questions about alerts in plain English. Laya is an LLM-powered conversational interface (backed by Groq or Gemini) that can explain predictions, summarize alert patterns, and answer security-related queries. 
 
+<p align="center">
+  <img src="data/screenshots/Laya Chat.jpeg" alt="Laya Chat" width="90%">
+  <br><em>Laya provides structured triage guidance for DoS alert investigation</em>
+</p>
+
 > **Safety by design:** Laya is strictly advisory. All classification and triage decisions are made exclusively by the calibrated ML pipeline — the LLM never controls security-critical actions.
 
 ---
 
-##  How It Works
+## ⚙ How It Works
 
 ### Classification Pipeline
-The core model is a **Random Forest classifier** trained on the [CIC-IDS2017 dataset](https://www.unb.ca/cic/datasets/ids-2017.html) with **76 CICFlowMeter network flow features**. It classifies traffic into 10 categories:
+The core model is a **Random Forest classifier** trained on the [UNSW-NB15 dataset](https://research.unsw.edu.au/projects/unsw-nb15-dataset) with **76 network flow features**. It classifies traffic into 10 categories:
 
 | Class | Description |
 |-------|-------------|
 | Benign | Normal traffic |
-| DDoS | Distributed Denial of Service |
-| PortScan | Port scanning activity |
-| Bot | Botnet communication |
-| Infiltration | Network infiltration |
-| Web Attack | Brute Force, XSS, SQL Injection |
-| FTP-Patator | FTP brute force |
-| SSH-Patator | SSH brute force |
-| Heartbleed | OpenSSL vulnerability exploit |
+| Analysis | Port scan, spam, HTML vulnerability probes |
+| Backdoor | Covert unauthorized remote access |
+| DoS | Denial of Service flooding |
+| Exploits | Known vulnerability exploitation |
+| Fuzzers | Protocol and input fuzzing attacks |
+| Generic | Generic attack signatures |
+| Reconnaissance | Network mapping and information gathering |
+| Shellcode | Remote code execution payloads |
+| Worms | Self-propagating malware |
 
 ### Two-Stage Triage Policy
 Raw model output passes through a calibrated decision engine with dual thresholds, assigning alerts to four priority bands:
@@ -130,7 +158,7 @@ Thresholds (θ_low = 0.20, θ_high = 0.70) are calibrated on a held-out validati
 
 ---
 
-##  Getting Started
+## 🚀 Getting Started
 
 ### Prerequisites
 
@@ -190,7 +218,7 @@ Laya falls back to deterministic template explanations if no API key is configur
 
 ---
 
-##  Testing
+## 🧪 Testing
 
 ```bash
 # Full suite
@@ -215,11 +243,11 @@ The test suite covers the inference engine, triage decision logic, API endpoints
 | **Backend** | FastAPI, Uvicorn, Python 3.11, SQLite |
 | **ML Pipeline** | scikit-learn 1.3, SHAP TreeExplainer, Random Forest |
 | **Live Capture** | WebSocket, CICFlowMeter feature extraction |
-| **NLP** | Groq (Llama 3.3) or Google Gemini — configurable, advisory only |
+| **NLP** | Groq or Google Gemini — configurable LLM provider, advisory only |
 
 ---
 
-##  Project Structure
+## 📁 Project Structure
 
 ```
 SentinelAI/
@@ -256,7 +284,7 @@ SentinelAI/
 
 ---
 
-##  Contributing
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/your-feature`
@@ -265,6 +293,11 @@ SentinelAI/
 
 ---
 
+## 📄 License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+
+---
 
 ## Acknowledgments
 
