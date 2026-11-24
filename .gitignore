@@ -129,7 +129,7 @@ tmp/
 scratch/
 **/scratch/
 
-data/
+data/*
 experiments/
 research/
 staging/
