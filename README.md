@@ -36,7 +36,7 @@ Every decision is explainable. SHAP-powered feature attribution shows analysts *
 
 ---
 
-## ✨ Features
+##  Features
 
 ### Real-Time Live Capture
 Monitor network traffic as it happens. SentinelAI captures packets, extracts 76 CICFlowMeter features from each flow, runs classification through the trained model, and streams results to the dashboard — all via WebSocket with automatic reconnection and exponential backoff. Alerts appear on the dashboard the moment they're detected.
@@ -106,7 +106,7 @@ Ask questions about alerts in plain English. Laya is an LLM-powered conversation
 
 ---
 
-## ⚙ How It Works
+##  How It Works
 
 ### Classification Pipeline
 The core model is a **Random Forest classifier** trained on the [UNSW-NB15 dataset](https://research.unsw.edu.au/projects/unsw-nb15-dataset) with **76 network flow features**. It classifies traffic into 10 categories:
@@ -158,7 +158,7 @@ Thresholds (θ_low = 0.20, θ_high = 0.70) are calibrated on a held-out validati
 
 ---
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### Prerequisites
 
@@ -218,7 +218,7 @@ Laya falls back to deterministic template explanations if no API key is configur
 
 ---
 
-## 🧪 Testing
+##  Testing
 
 ```bash
 # Full suite
@@ -235,7 +235,7 @@ The test suite covers the inference engine, triage decision logic, API endpoints
 
 ---
 
-## 🛠 Tech Stack
+##  Tech Stack
 
 | Layer | Technologies |
 |-------|-------------|
@@ -247,7 +247,7 @@ The test suite covers the inference engine, triage decision logic, API endpoints
 
 ---
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 SentinelAI/
@@ -284,7 +284,7 @@ SentinelAI/
 
 ---
 
-## 🤝 Contributing
+##  Contributing
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/your-feature`
@@ -293,7 +293,7 @@ SentinelAI/
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
 
